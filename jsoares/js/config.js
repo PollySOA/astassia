@@ -15,19 +15,18 @@
 
 
 const CONFIG = {
-    // Yo: aquí guardo la API Key de la NASA para que la use la aplicación.
-    // Si eres principiante, piensa: esto es como mi tarjeta de acceso para pedir datos a la NASA.
+    //aquí guardo la API Key de la NASA para que la use la aplicación.
     // Nota: en proyectos reales no se suben claves secretas al repositorio.
     NASA_API_KEY: 'x7y7fDZraWoSIDUSZiy2khtqQQeMpgMLWiSrcPUo',
 
-    // Yo: estas son las direcciones web (endpoints) que usaré para pedir información.
+    //  estas son las direcciones web (endpoints) que usaré para pedir información.
     NASA_APOD_URL: 'https://api.nasa.gov/planetary/apod',
     NASA_NEOWS_URL: 'https://api.nasa.gov/neo/rest/v1/feed',
     NASA_MARS_URL: 'https://api.nasa.gov/mars-photos/api/v1/rovers',
     NASA_EPIC_URL: 'https://api.nasa.gov/EPIC/api/natural',
     EPIC_IMAGE_BASE: 'https://epic.gsfc.nasa.gov/archive/natural',
 
-    // Yo: parámetros que controlan el comportamiento de la app.
+    //  parámetros que controlan el comportamiento de la app.
     DANGER_THRESHOLD: 5000000, // km - cuando un asteroide está más cerca que esto lo considero peligroso
     MOON_DISTANCE: 384400,     // km - distancia media Tierra-Luna (para comparar)
     API_TIMEOUT: 15000,        // ms - tiempo máximo que espero por una respuesta
@@ -35,7 +34,7 @@ const CONFIG = {
     USE_BACKUP: false
 };
 
-// Yo: hago la configuración accesible desde cualquier script que cargue la página.
+//  hago la configuración accesible desde cualquier script que cargue la página.
 // Algunas partes del código usan `APP_CONFIG`, otras usan `NASA_API_KEY`. Me aseguro
 // de exponer ambos para compatibilidad.
 if (typeof window !== 'undefined') {

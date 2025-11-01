@@ -103,10 +103,14 @@ function initializeEventListeners() {
   // Event listeners para los enlaces de navegación
   document.querySelectorAll('.nav-link').forEach(link=>{
     link.addEventListener('click', (e)=>{
-      e.preventDefault();
       const sec = link.dataset.section;
-      console.log('📍 Navegando a sección:', sec); // Debug
-      if(sec) showSection(sec);
+      // Solo prevenir comportamiento por defecto si es un enlace de sección interna
+      if(sec) {
+        e.preventDefault();
+        console.log('📍 Navegando a sección:', sec); // Debug
+        showSection(sec);
+      }
+      // Si no tiene data-section, dejar que el navegador abra el enlace normalmente
     });
   });
 
