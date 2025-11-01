@@ -14,7 +14,7 @@
 // Definimos las constantes globales de configuración, como las URLs de las APIs y la API Key de NASA.
 // Esto permite centralizar los valores y modificarlos fácilmente si es necesario.
 const CONFIG = {
-  NASA_API_KEY: 'x7y7fDZraWoSIDUSZiy2khtqQQeMpgMLWiSrcPUo',
+  NASA_API_KEY: 'x7y7fDZraWoSIDUSZiy2khtqQQeMpgMLWiSrcPUo', // Clave pública de demo
   APOD_URL: 'https://api.nasa.gov/planetary/apod',
   EPIC_URL: 'https://api.nasa.gov/EPIC/api/natural',
   EPIC_IMAGE_BASE: 'https://epic.gsfc.nasa.gov/archive/natural',
@@ -61,20 +61,11 @@ async function fetchWithTimeout(url, timeout = CONFIG.API_TIMEOUT) {
   }
 }
 
-// ========== 4. SISTEMA DE NAVEGACIÓN CON PROTECCIÓN POR LOGIN ==========
-// Controla la navegación entre secciones. Algunas requieren que el usuario esté logueado.
-// Si no hay sesión, muestra el modal de autenticación.
+// ========== 4. SISTEMA DE NAVEGACIÓN ENTRE SECCIONES ==========
+// Controla la navegación entre secciones. TODAS las secciones son accesibles sin restricciones.
 function showSection(name){
-  const protectedSections = ['explorar','nasa-tools','galeria','innovacion'];
-  const session = localStorage.getItem('esoares_session');
-  const logged = !!session;
-
-  if(protectedSections.includes(name) && !logged){
-    alert('🔒 Debes iniciar sesión para acceder.'); 
-    new bootstrap.Modal(document.getElementById('authModal')).show();
-    return;
-  }
-
+  // ✅ Navegación libre - Cualquiera puede acceder a todas las secciones
+  
   document.querySelectorAll('.section-content').forEach(s => {
     s.classList.remove('active');
     s.setAttribute('aria-hidden','true');
@@ -97,34 +88,57 @@ function showSection(name){
   } else if(name === 'innovacion') {
     renderSolarSystem();
     loadInnovations();
-  } else if(name === 'nasa-tools') {
-    loadNASAEyesEarth(document.getElementById('nasaToolsContent'));
+  } else if(name === 'explorar') {
+    // Cargar imágenes EPIC de la Tierra
+    loadEPIC();
   }
 }
 
 // ========== 5. EVENT LISTENERS PARA NAVEGACIÓN ==========
 // Asignamos eventos a los enlaces de navegación y botones para cambiar de sección de forma fluida.
-document.querySelectorAll('.nav-link').forEach(link=>{
-  link.addEventListener('click', (e)=>{
-    e.preventDefault();
-    const sec = link.dataset.section;
-    if(sec) showSection(sec);
-  });
-});
 
-document.getElementById('startExploreBtn').addEventListener('click', (e)=> {
-  e.preventDefault();
-  showSection('explorar');
-});
-
-// ========== 6. CARDS EXPANDIBLES EN SECCIÓN EXPLORAR ==========
-// Permite expandir/cerrar tarjetas informativas en la sección de exploración con click o teclado.
-document.querySelectorAll('.explore-card').forEach(card=>{
-  card.addEventListener('click', ()=>{
-    card.classList.toggle('expanded');
+// ========== 5. EVENT LISTENERS PARA NAVEGACIÓN Y CONFIGURACIÓN ==========
+// Esperar a que el DOM esté completamente cargado
+function initializeEventListeners() {
+  // Event listeners para los enlaces de navegación
+  document.querySelectorAll('.nav-link').forEach(link=>{
+    link.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const sec = link.dataset.section;
+      console.log('📍 Navegando a sección:', sec); // Debug
+      if(sec) showSection(sec);
+    });
   });
-  card.addEventListener('keypress', (e)=>{ if(e.key === 'Enter') card.click(); });
-});
+
+  // Event listener para el botón "Comenzar Exploración"
+  const startBtn = document.getElementById('startExploreBtn');
+  if(startBtn) {
+    startBtn.addEventListener('click', (e)=> {
+      e.preventDefault();
+      console.log('📍 Clickeado botón: Comenzar Exploración'); // Debug
+      showSection('explorar');
+    });
+  }
+
+  // ========== 6. CARDS EXPANDIBLES EN SECCIÓN EXPLORAR ==========
+  // Permite expandir/cerrar tarjetas informativas en la sección de exploración con click o teclado.
+  document.querySelectorAll('.explore-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      card.classList.toggle('expanded');
+    });
+    card.addEventListener('keypress', (e)=>{ if(e.key === 'Enter') card.click(); });
+  });
+
+  console.log('✅ Event listeners de navegación registrados'); // Debug
+}
+
+// Ejecutar cuando DOM está listo
+if(document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeEventListeners);
+} else {
+  // DOM ya está listo (script cargado al final del body)
+  initializeEventListeners();
+}
 
 // ========== 7. DATOS DE LA GALERÍA - 50 IMÁGENES ESPACIALES COMPLETAS ==========
 // Array con información de imágenes espaciales para la galería.
@@ -407,25 +421,34 @@ let epicImages = [];
 let currentEpicIndex = 0;
 
 async function loadEPIC() {
+  // ✅ PRIMERO: Mostrar visor interactivo NASA Eyes
   const container = document.getElementById('epicContent');
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando vista de la Tierra...</p></div>';
+  loadNASAEyesEarth(container);
   
+  // ✅ SEGUNDO: Cargar imágenes EPIC en background para el botón
   try {
     const apiUrls = URL_TEMPLATES.NASA_APIS('EPIC/api/natural');
     const response = await fetchWithTimeout(apiUrls[0]);
     
-    if (!response.ok) throw new Error('API no disponible');
-    
-    const data = await response.json();
-    console.log('✅ Datos EPIC obtenidos de la API:', data.length, 'imágenes');
-    
-    epicImages = data.slice(0, 5);
-    currentEpicIndex = 0;
-    renderEPIC(false, 'api');
-    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Datos EPIC obtenidos de la API:', data.length, 'imágenes');
+      epicImages = data.slice(0, 5);
+      currentEpicIndex = 0;
+    }
   } catch (error) {
-    console.warn('⚠️ EPIC API falló, cargando NASA Eyes on Earth:', error.message);
-    loadNASAEyesEarth(container);
+    console.warn('⚠️ EPIC API falló, intentando respaldo...', error.message);
+    // Cargar respaldo silenciosamente para tener imágenes disponibles
+    try {
+      const response = await fetch('data/epic_backup.json');
+      if (response.ok) {
+        const data = await response.json();
+        epicImages = data.slice(0, 5);
+        currentEpicIndex = 0;
+      }
+    } catch (err) {
+      console.warn('⚠️ Respaldo EPIC también falló');
+    }
   }
 }
 
@@ -446,8 +469,8 @@ function loadNASAEyesEarth(container) {
           <a href="https://eyes.nasa.gov/apps/solar-system/#/earth" target="_blank" class="btn btn-nasa btn-sm">
             <i class="bi bi-box-arrow-up-right"></i> Abrir en pantalla completa
           </a>
-          <button class="btn btn-outline-light btn-sm" onclick="loadBackupEPICFromJSON()">
-            <i class="bi bi-images"></i> Ver imágenes EPIC alternativas
+          <button class="btn btn-outline-light btn-sm" onclick="showEPICImages()">
+            <i class="bi bi-images"></i> Ver imágenes EPIC reales
           </button>
         </div>
       </div>
@@ -456,27 +479,49 @@ function loadNASAEyesEarth(container) {
 
 window.loadNASAEyesEarth = loadNASAEyesEarth;
 
-async function loadBackupEPICFromJSON() {
+// ✅ Nueva función para mostrar imágenes EPIC
+async function showEPICImages() {
   const container = document.getElementById('epicContent');
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando imágenes de respaldo...</p></div>';
   
+  // Si ya tenemos imágenes cargadas, mostrarlas directo
+  if (epicImages && epicImages.length > 0) {
+    currentEpicIndex = 0;
+    renderEPIC(epicImages[0].image_url ? true : false, epicImages[0].image_url ? 'json' : 'api');
+    return;
+  }
+  
+  // Si no, cargar desde API
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Cargando imágenes EPIC...</p></div>';
+  
+  try {
+    const apiUrls = URL_TEMPLATES.NASA_APIS('EPIC/api/natural');
+    const response = await fetchWithTimeout(apiUrls[0]);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Imágenes EPIC cargadas:', data.length);
+      epicImages = data.slice(0, 5);
+      currentEpicIndex = 0;
+      renderEPIC(false, 'api');
+      return;
+    }
+  } catch (error) {
+    console.warn('⚠️ API EPIC falló, intentando respaldo...');
+  }
+  
+  // Fallback: cargar desde JSON
   try {
     const response = await fetch('data/epic_backup.json');
     const data = await response.json();
-    
-    if (data && data.length > 0) {
-      console.log('✅ Respaldo EPIC cargado:', data.length, 'imágenes');
-      epicImages = data;
-      currentEpicIndex = 0;
-      renderEPIC(true, 'json');
-    } else {
-      throw new Error('No backup data');
-    }
+    console.log('✅ Imágenes EPIC de respaldo cargadas:', data.length);
+    epicImages = data.slice(0, 5);
+    currentEpicIndex = 0;
+    renderEPIC(true, 'json');
   } catch (err) {
-    console.error('❌ Error al cargar respaldo EPIC:', err);
+    console.error('❌ Error al cargar imágenes EPIC:', err);
     container.innerHTML = `
       <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle"></i> No hay imágenes EPIC disponibles.
+        <i class="bi bi-exclamation-triangle"></i> No hay imágenes disponibles.
         <button class="btn btn-sm btn-outline-warning ms-2" onclick="loadNASAEyesEarth(document.getElementById('epicContent'))">
           Volver a NASA Eyes
         </button>
@@ -484,7 +529,7 @@ async function loadBackupEPICFromJSON() {
   }
 }
 
-window.loadBackupEPICFromJSON = loadBackupEPICFromJSON;
+window.showEPICImages = showEPICImages;
 
 function renderEPIC(isBackup = false, source = 'api') {
   const container = document.getElementById('epicContent');
@@ -531,7 +576,7 @@ function renderEPIC(isBackup = false, source = 'api') {
             Siguiente <i class="bi bi-chevron-right"></i>
           </button>
           <button class="btn btn-outline-light btn-sm" onclick="loadNASAEyesEarth(document.getElementById('epicContent'))">
-            <i class="bi bi-globe"></i> Vista interactiva
+            <i class="bi bi-globe"></i> Volver a NASA Eyes
           </button>
         </div>
       </div>
@@ -603,7 +648,11 @@ function renderStats(){
 
 // ========== 15. SISTEMA DE COMENTARIOS ==========
 // Permite a los usuarios dejar comentarios y valoraciones, que se guardan en localStorage.
+// ✅ SEGURIDAD: Solo usuarios logueados con demo@demo.com pueden comentar
 const commentsData = JSON.parse(localStorage.getItem('esoares_comments') || '[]');
+
+// Expresión regular para validar email (debe coincidir con la de auth.js)
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function renderComments(){
   const container = document.getElementById('commentsContainer');
@@ -622,6 +671,7 @@ function renderComments(){
         <div>
           <strong>${comment.name}</strong>
           <div class="star-rating">${'⭐'.repeat(comment.rating)}</div>
+          <small class="text-muted d-block">${comment.email}</small>
         </div>
         <small class="text-muted">${new Date(comment.date).toLocaleDateString('es-ES')}</small>
       </div>
@@ -637,12 +687,22 @@ function renderComments(){
 }
 
 function addComment(name, rating, text){
+  // ✅ VALIDACIÓN: El comentario es ANÓNIMO - Solo necesita nombre y texto
+  
+  // ✅ Validar nombre (solo letras y espacios)
   const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-  if(!nameRegex.test(name)){
-    alert('El nombre solo puede contener letras y espacios');
+  if(!nameRegex.test(name) || name.trim().length === 0){
+    alert('❌ El nombre solo puede contener letras y espacios');
     return false;
   }
   
+  // ✅ Validar que haya texto
+  if(text.trim().length === 0){
+    alert('❌ El comentario no puede estar vacío');
+    return false;
+  }
+  
+  // ✅ Crear comentario ANÓNIMO
   const comment = {
     id: Date.now(),
     name: name.trim(),

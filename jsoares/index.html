@@ -22,593 +22,8 @@
   <!-- ============================= -->
   <!-- ESTILOS DE LA APP            -->
   <!-- ============================= -->
-  <!-- Aquí se definen los estilos para el fondo, la navegación, los objetos y las secciones -->
-  <style>
-    :root {
-      --nasa-red: #FC3D21;
-      --nasa-blue: #0B3D91;
-      --dark-bg: #000000;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Rajdhani', sans-serif;
-      background: #000;
-      color: #ffffff;
-      overflow-x: hidden;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      font-family: 'Orbitron', sans-serif;
-    }
-
-    /* Sistema Tierra-céntrico como fondo */
-    #earth-system-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
-      overflow: hidden;
-      z-index: -1;
-    }
-
-    /* Estrellas de fondo */
-    .star {
-      position: absolute;
-      background: white;
-      border-radius: 50%;
-      animation: twinkle 3s infinite;
-    }
-
-    @keyframes twinkle {
-
-      0%,
-      100% {
-        opacity: 0.2;
-      }
-
-      50% {
-        opacity: 0.9;
-      }
-    }
-
-    /* Contenedor central */
-    .earth-system {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 1000px;
-      height: 1000px;
-    }
-
-    /* Tierra central */
-    .earth-center {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100px;
-      height: 100px;
-      background: linear-gradient(135deg, #1e90ff 0%, #228b22 30%, #1e90ff 60%, #87ceeb 100%);
-      border-radius: 50%;
-      box-shadow:
-        0 0 40px rgba(30, 144, 255, 0.6),
-        inset -10px -10px 20px rgba(0, 0, 0, 0.3);
-      animation: rotate-earth 20s linear infinite;
-      z-index: 10;
-    }
-
-    @keyframes rotate-earth {
-      from {
-        transform: translate(-50%, -50%) rotate(0deg);
-      }
-
-      to {
-        transform: translate(-50%, -50%) rotate(360deg);
-      }
-    }
-
-    /* Órbitas */
-    .orbit {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
-
-    /* Órbita del Sol */
-    .sun-orbit {
-      width: 400px;
-      height: 400px;
-      border-color: rgba(255, 215, 0, 0.2);
-    }
-
-    /* Sol */
-    .sun {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle, #ffd700, #ff8c00);
-      border-radius: 50%;
-      box-shadow: 0 0 40px #ff8c00, 0 0 60px #ffa500;
-      animation: pulse-sun 3s ease-in-out infinite;
-    }
-
-    @keyframes pulse-sun {
-
-      0%,
-      100% {
-        transform: scale(1);
-        box-shadow: 0 0 40px #ff8c00, 0 0 60px #ffa500;
-      }
-
-      50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 50px #ff8c00, 0 0 80px #ffa500;
-      }
-    }
-
-    /* Órbita de la Luna */
-    .moon-orbit {
-      width: 180px;
-      height: 180px;
-      border-color: rgba(192, 192, 192, 0.3);
-    }
-
-    /* Luna */
-    .moon {
-      position: absolute;
-      width: 25px;
-      height: 25px;
-      background: linear-gradient(135deg, #c0c0c0, #808080);
-      border-radius: 50%;
-      box-shadow: 0 0 15px rgba(192, 192, 192, 0.5);
-    }
-
-    /* Órbita de satélites */
-    .satellite-orbit {
-      width: 240px;
-      height: 240px;
-      border-color: rgba(100, 149, 237, 0.2);
-      border-style: dashed;
-    }
-
-    /* Satélites */
-    .satellite {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      background: linear-gradient(135deg, silver, #4169e1);
-      border-radius: 3px;
-      box-shadow: 0 0 10px rgba(65, 105, 225, 0.8);
-    }
-
-    .satellite::before {
-      content: '';
-      position: absolute;
-      width: 25px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #4169e1, transparent);
-      top: 50%;
-      left: -5px;
-      transform: translateY(-50%);
-    }
-
-    .satellite::after {
-      content: '';
-      position: absolute;
-      width: 25px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #4169e1, transparent);
-      top: 50%;
-      right: -5px;
-      transform: translateY(-50%);
-    }
-
-    /* Órbita de asteroides */
-    .asteroid-orbit {
-      width: 320px;
-      height: 320px;
-      border-color: rgba(139, 69, 19, 0.2);
-      border-style: dotted;
-    }
-
-    /* Asteroides */
-    .asteroid {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      background: #8b4513;
-      border-radius: 50%;
-      box-shadow: 0 0 5px rgba(139, 69, 19, 0.6);
-    }
-
-    /* Navigation */
-    .navbar {
-      background: rgba(252, 61, 33, 0.95) !important;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 20px rgba(252, 61, 33, 0.5);
-      position: relative;
-      z-index: 1000;
-    }
-
-    .navbar-brand {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: #ffffff !important;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
-
-    .navbar-brand img {
-      width: 50px;
-      height: auto;
-      margin-right: 10px;
-    }
-
-    .nav-link {
-      color: rgba(255, 255, 255, 0.8) !important;
-      font-weight: 500;
-      margin: 0 0.5rem;
-      transition: all 0.3s;
-      cursor: pointer;
-    }
-
-    .nav-link:hover,
-    .nav-link.active {
-      color: #ffffff !important;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    }
-
-    /* Hero Carousel */
-    #heroCarousel {
-      height: 100vh;
-      margin-top: 70px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .carousel-item {
-      height: 100vh;
-    }
-
-    .carousel-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      filter: brightness(0.4);
-    }
-
-    .carousel-caption {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90%;
-      text-align: center;
-    }
-
-    .neon-text-red {
-      color: var(--nasa-red);
-      text-shadow: 0 0 20px var(--nasa-red), 0 0 40px var(--nasa-red);
-      animation: neon-pulse-red 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes neon-pulse-red {
-      from {
-        text-shadow: 0 0 20px var(--nasa-red);
-      }
-
-      to {
-        text-shadow: 0 0 40px var(--nasa-red), 0 0 60px var(--nasa-red);
-      }
-    }
-
-    /* Buttons */
-    .btn-danger-neon {
-      background: linear-gradient(135deg, var(--nasa-red), #ff6b4a);
-      color: #ffffff;
-      border: none;
-      padding: 0.75rem 2rem;
-      font-weight: 600;
-      border-radius: 50px;
-      transition: all 0.3s;
-      box-shadow: 0 0 20px rgba(252, 61, 33, 0.4);
-    }
-
-    .btn-danger-neon:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 30px rgba(252, 61, 33, 0.6);
-      color: #ffffff;
-    }
-
-    /* Sections */
-    .section-content {
-      display: none;
-      min-height: 100vh;
-      padding: 2rem 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .section-content.active {
-      display: block;
-      animation: fadeIn 0.5s;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .section-title {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: var(--nasa-red);
-      text-shadow: 0 0 20px var(--nasa-red);
-      margin-bottom: 2rem;
-    }
-
-    /* Stats Cards */
-    .stat-card {
-      background: rgba(252, 61, 33, 0.1);
-      border: 2px solid rgba(252, 61, 33, 0.3);
-      border-radius: 15px;
-      padding: 1.5rem;
-      text-align: center;
-      transition: all 0.3s;
-      height: 100%;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(252, 61, 33, 0.3);
-      border-color: var(--nasa-red);
-    }
-
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 700;
-      display: block;
-      margin: 0.5rem 0;
-    }
-
-    /* Asteroid List */
-    .asteroid-item {
-      background: rgba(255, 255, 255, 0.05);
-      border-left: 4px solid;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      transition: all 0.3s;
-    }
-
-    .asteroid-item:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateX(5px);
-    }
-
-    .asteroid-item.danger-high {
-      border-left-color: #dc3545;
-    }
-
-    .asteroid-item.danger-medium {
-      border-left-color: #ffc107;
-    }
-
-    .asteroid-item.danger-low {
-      border-left-color: #28a745;
-    }
-
-    /* Cards */
-    .card-custom {
-      background: rgba(26, 26, 46, 0.6);
-      border: 1px solid rgba(252, 61, 33, 0.2);
-      border-radius: 15px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    /* Loading */
-    .loading-spinner {
-      text-align: center;
-      padding: 3rem;
-    }
-
-    .spinner-border {
-      color: var(--nasa-red) !important;
-      width: 3rem;
-      height: 3rem;
-    }
-
-    /* Forms */
-    .form-control,
-    .form-select {
-      background: rgba(26, 26, 46, 0.6);
-      border: 1px solid rgba(252, 61, 33, 0.3);
-      color: #ffffff;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-      background: rgba(26, 26, 46, 0.8);
-      border-color: var(--nasa-red);
-      box-shadow: 0 0 15px rgba(252, 61, 33, 0.3);
-      color: #ffffff;
-    }
-
-    /* Footer */
-    .footer {
-      background: rgba(252, 61, 33, 0.2);
-      border-top: 1px solid rgba(252, 61, 33, 0.3);
-      padding: 3rem 0;
-      margin-top: 5rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Scroll List */
-    .scroll-list {
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    .scroll-list::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .scroll-list::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
-    }
-
-    .scroll-list::-webkit-scrollbar-thumb {
-      background: var(--nasa-red);
-      border-radius: 4px;
-    }
-
-    /* Eyes Tools Cards */
-    .eyes-card {
-      background: rgba(26, 26, 46, 0.6);
-      border: 1px solid rgba(252, 61, 33, 0.2);
-      border-radius: 15px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      transition: all 0.3s;
-      height: 100%;
-    }
-
-    .eyes-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(252, 61, 33, 0.3);
-      border-color: var(--nasa-red);
-    }
-
-    /* Comments Section */
-    .comment-item {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .star-rating {
-      color: gold;
-      font-size: 1.2rem;
-    }
-
-    /* NASA Eyes Integration Styles */
-    .nasa-eyes-embed {
-      transition: all 0.3s ease;
-    }
-
-    .nasa-eyes-embed:hover {
-      transform: translateY(-2px);
-    }
-
-    .embed-container {
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      transition: box-shadow 0.3s ease;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .embed-container:hover {
-      box-shadow: 0 8px 30px rgba(252, 61, 33, 0.2);
-    }
-
-    .eyes-info {
-      border-left: 4px solid var(--nasa-red);
-    }
-
-    .nasa-eyes-backup {
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    .backup-visual {
-      background: linear-gradient(135deg, rgba(11, 61, 145, 0.1), rgba(252, 61, 33, 0.05));
-      border-radius: 15px;
-      border: 2px solid rgba(252, 61, 33, 0.2);
-    }
-
-    .data-item {
-      padding: 0.5rem;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 5px;
-      border-left: 3px solid var(--nasa-blue);
-    }
-
-    /* Responsive para el embed */
-    @media (max-width: 768px) {
-      .embed-container {
-        height: 300px !important;
-      }
-
-      .eyes-info {
-        font-size: 0.9rem;
-      }
-    }
-
-    /* Animaciones */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .carousel-caption .display-1 {
-        font-size: 2.5rem;
-      }
-    }
-
-    /* Asteroid danger/safe highlight */
-    .asteroid-item.dangerous {
-      border-left: 4px solid #dc3545;
-      background-color: rgba(220, 53, 69, 0.1);
-    }
-
-    .asteroid-item.safe {
-      border-left: 4px solid #28a745;
-      background-color: rgba(40, 167, 69, 0.1);
-    }
-  </style>
+  <!-- Estilos externos organizados en css/styles.css -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
@@ -679,9 +94,8 @@
           <li class="nav-item"><a class="nav-link active" href="#inicio" data-section="inicio">Inicio</a></li>
           <li class="nav-item"><a class="nav-link" href="#asteroides" data-section="asteroides">Asteroides</a></li>
           <li class="nav-item"><a class="nav-link" href="#tierra" data-section="tierra">Tierra</a></li>
+          <li class="nav-item"><a class="nav-link" href="#explorar" data-section="explorar">Explorar</a></li>
           <li class="nav-item"><a class="nav-link" href="#eyes" data-section="eyes">Eyes Tools</a></li>
-          <li class="nav-item"><a class="nav-link" href="#" id="authLink"><i class="bi bi-person-circle"></i> Login</a>
-          </li>
         </ul>
       </div>
     </div>
@@ -702,6 +116,7 @@
       <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
       <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
       <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3"></button>
     </div>
     <div class="carousel-inner">
       <div class="carousel-item active">
@@ -728,12 +143,12 @@
       </div>
       <div class="carousel-item">
         <div class="carousel-bg"
-          style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80');">
+          style="background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1920&q=80');">
         </div>
         <div class="carousel-caption">
-          <h1 class="display-1 fw-bold neon-text-red">La Tierra desde el Espacio</h1>
-          <p class="lead">Imágenes del satélite EPIC</p>
-          <a href="#tierra" class="btn btn-danger-neon btn-lg mt-3" data-section="tierra">Ver la Tierra</a>
+          <h1 class="display-1 fw-bold neon-text-red">Explorar el Universo</h1>
+          <p class="lead">Escucha Hubble y juega con la cámara espacial</p>
+          <a href="#explorar" class="btn btn-danger-neon btn-lg mt-3" data-section="explorar">Explorar Ahora</a>
         </div>
       </div>
     </div>
@@ -849,15 +264,28 @@
             Se muestra mientras se obtienen los datos de la API.
             Cuando termina la carga, se oculta y aparece la lista de asteroides.
           -->
-          <div class="spinner-border"></div>
-          <p class="mt-3">Rastreando asteroides cercanos...</p>
-        </div>
+          <div id="asteroidsLoading" class="text-center py-5">
+            <div class="spinner-border text-danger" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3">⏳ Rastreando asteroides cercanos... (máx. 10 segundos)</p>
+          </div>
 
-        <!--
-          Aquí se insertan los asteroides con JS.
-          Cada asteroide es una tarjeta con información relevante.
-        -->
-      </div>
+          <!--
+            Aquí se insertan los asteroides con JS.
+            Cada asteroide es una tarjeta con información relevante.
+            Con scroll para no ocupar demasiado espacio.
+          -->
+          <div id="asteroidsList"
+            style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(252, 61, 33, 0.2); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          </div>
+
+          <div class="text-center">
+            <button id="toggleAsteroidsFullView" class="btn btn-outline-danger" style="display: none;">
+              <i class="bi bi-fullscreen"></i> Ver lista completa
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -890,6 +318,72 @@
               Aquí se inserta la imagen de la Tierra y los controles para navegar entre fotos.
               Si la API falla, se muestra una imagen de respaldo.
             -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================= -->
+    <!-- SECCIÓN: EXPLORAR             -->
+    <!-- ============================= -->
+    <!--
+      Herramientas interactivas de NASA para explorar el universo:
+      - Escuchando Hubble: Sonificación de imágenes del telescopio Hubble
+      - Camera Hubble: Juego interactivo con el telescopio Hubble
+    -->
+    <section id="explorar" class="section-content">
+      <div class="container py-5">
+        <h2 class="section-title text-center">🔭 Explorar el Universo</h2>
+
+        <!-- TARJETA 1: Escuchando Hubble -->
+        <div class="card-custom mb-4">
+          <h3 class="mb-3"><i class="bi bi-music"></i> Escuchando Hubble</h3>
+          <p class="mb-3">Hearing Hubble te permite transformar las imágenes del telescopio Hubble en música mediante la
+            sonificación, un proceso que convierte colores y brillos en sonidos. Explora 10 impresionantes vistas del
+            universo y crea tu propia sinfonía eligiendo instrumentos, armonías y patrones. ¡Comparte tu composición y
+            escucha el cosmos como nunca antes!</p>
+
+          <div id="hubbleListeningLoading" class="loading-spinner mb-3" style="display: none;">
+            <div class="spinner-border"></div>
+            <p class="mt-2">Cargando Escuchando Hubble...</p>
+          </div>
+
+          <div id="hubbleListeningContent" style="display: none;">
+            <div class="ratio ratio-16x9 mb-3" style="max-height: 600px;">
+              <iframe id="hubbleListeningIframe"
+                src="https://www3.nasa.gov/specials/hubble-hearing-app/?5-2-false-1-4-0-0-50"
+                style="border-radius: 10px; border: 2px solid rgba(252, 61, 33, 0.3);" allowfullscreen></iframe>
+            </div>
+            <a href="https://science.nasa.gov/mission/hubble/multimedia/online-activities/hearing-hubble/"
+              target="_blank" class="btn btn-nasa">
+              <i class="bi bi-box-arrow-up-right"></i> Ir a Hearing Hubble en NASA
+            </a>
+          </div>
+        </div>
+
+        <!-- TARJETA 2: Camera Hubble Juego -->
+        <div class="card-custom mb-4">
+          <h3 class="mb-3"><i class="bi bi-camera"></i> Camera Hubble - Juego</h3>
+          <p class="mb-3">¡Juega a ser astrónomo! Utiliza la cámara del telescopio Hubble para capturar increíbles
+            vistas del universo. Completa desafíos y descubre objetos espaciales fascinantes.</p>
+
+          <button class="btn btn-danger-neon btn-lg mb-3 play-hubble-game-btn" id="playHubbleGameBtn">
+            <i class="bi bi-play-circle"></i> ¡Juega Ahora!
+          </button>
+
+          <div id="hubbleGameLoading" class="loading-spinner mb-3" style="display: none;">
+            <div class="spinner-border"></div>
+            <p class="mt-2">Cargando Camera Hubble...</p>
+          </div>
+
+          <div id="hubbleGameContent" style="display: none;">
+            <div class="ratio ratio-16x9 mb-3" style="max-height: 600px;">
+              <iframe id="hubbleGameIframe" src="https://www3.nasa.gov/specials/hubble-adventure-app/"
+                style="border-radius: 10px; border: 2px solid rgba(252, 61, 33, 0.3);" allowfullscreen></iframe>
+            </div>
+            <a href="https://www3.nasa.gov/specials/hubble-adventure-app/" target="_blank" class="btn btn-nasa">
+              <i class="bi bi-box-arrow-up-right"></i> Abrir en pantalla completa
+            </a>
           </div>
         </div>
       </div>
@@ -1029,57 +523,6 @@
     El cambio entre formularios se hace con enlaces dentro del modal.
     Los datos se validan antes de enviarse.
   -->
-  <div class="modal fade" id="authModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="background: rgba(26, 26, 46, 0.95); color: #ffffff;">
-        <div class="modal-header" style="border-bottom: 1px solid rgba(252, 61, 33, 0.3);">
-          <h5 class="modal-title" id="authModalTitle">Iniciar Sesión</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Login -->
-          <form id="loginForm" class="auth-form">
-            <div class="mb-3">
-              <input type="email" class="form-control" id="loginEmail" placeholder="Email" required>
-              <div class="invalid-feedback">Ingresa un email válido</div>
-            </div>
-            <div class="mb-3">
-              <input type="password" class="form-control" id="loginPassword" placeholder="Contraseña" required>
-              <div class="invalid-feedback">La contraseña es requerida</div>
-            </div>
-            <button type="submit" class="btn btn-danger-neon w-100 mb-3">Iniciar Sesión</button>
-            <p class="text-center mb-0">¿No tienes cuenta? <a href="#" id="showRegister"
-                style="color: var(--nasa-red);">Regístrate</a></p>
-          </form>
-
-          <!-- Register -->
-          <form id="registerForm" class="auth-form d-none">
-            <div class="mb-3">
-              <input type="text" class="form-control" id="registerName" placeholder="Nombre completo" required>
-              <div class="invalid-feedback">El nombre es requerido</div>
-            </div>
-            <div class="mb-3">
-              <input type="email" class="form-control" id="registerEmail" placeholder="Email" required>
-              <div class="invalid-feedback">Ingresa un email válido</div>
-            </div>
-            <div class="mb-3">
-              <input type="password" class="form-control" id="registerPassword"
-                placeholder="Contraseña (mínimo 6 caracteres)" required minlength="6">
-              <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres</div>
-            </div>
-            <div class="mb-3">
-              <input type="password" class="form-control" id="registerPasswordConfirm"
-                placeholder="Confirmar contraseña" required>
-              <div class="invalid-feedback">Las contraseñas no coinciden</div>
-            </div>
-            <button type="submit" class="btn btn-danger-neon w-100 mb-3">Registrarse</button>
-            <p class="text-center mb-0">¿Ya tienes cuenta? <a href="#" id="showLogin"
-                style="color: var(--nasa-red);">Inicia sesión</a></p>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ============================= -->
   <!-- PIE DE PÁGINA                 -->
@@ -1092,7 +535,7 @@
     <div class="container text-center">
       <h5>Monitor de Asteroides NEO</h5>
       <p>Proyecto jQuery - Pollyanna Soares (jsoares)</p>
-      <p><small>Desarrollado con jQuery, AJAX, Callbacks, DOM Manipulation</small></p>
+
     </div>
   </footer>
 

@@ -49,11 +49,6 @@
           <li class="nav-item"><a class="nav-link" href="#" data-section="valoraciones">Valoraciones</a></li>
           <!-- enlace al index Retos DAW 2025 index.html -->
           <li class="nav-item"><a class="nav-link" href="../index.html" target="_blank">Retos DAW 2025</a></li>
-          <!-- Botón para iniciar sesión o cerrar sesión -->
-          <li class="nav-item ms-3">
-            <button class="btn btn-nasa" id="authBtn"><i class="bi bi-person-circle"></i> <span
-                id="authBtnText">Login</span></button>
-          </li>
         </ul>
       </div>
     </div>
@@ -179,8 +174,8 @@
       <!-- Animación interactiva usando jQuery: la Tierra en el centro y objetos orbitando -->
       <div class="card-nasa mb-4">
         <h3><i class="bi bi-globe-americas"></i> Tierra al Centro (jQuery)</h3>
-        <p class="mb-3">Animación interactiva con jQuery mostrando la Tierra en el centro con el Sol, la Luna, satélites
-          y asteroides orbitando a su alrededor.</p>
+        <p class="mb-3">Animación interactiva con jQuery mostrando la Tierra en el centro como simulación con el Sol, la
+          Luna, satélites y asteroides orbitando a su alrededor.</p>
         <!-- Aquí se muestra la animación de la Tierra al centro en un iframe -->
         <div class="iframe-container">
           <iframe src="earth-center.html"
@@ -276,80 +271,11 @@
   </footer>
 
   <!-- ============================= -->
-  <!-- MODAL DE AUTENTICACIÓN        -->
-  <!-- ============================= -->
-  <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <!-- Título del modal (cambia según si es login o registro) -->
-        <div class="modal-header">
-          <h5 class="modal-title" id="authModalTitle">Iniciar Sesión</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <!-- Aquí van los formularios de login y registro -->
-        <div class="modal-body">
-          <!-- Formulario para que el usuario inicie sesión -->
-          <form id="loginForm" class="needs-validation" novalidate>
-            <div class="mb-3">
-              <label for="loginEmail" class="form-label visually-hidden">Email</label>
-              <input type="email" id="loginEmail" class="form-control" placeholder="Email (obligatorio)" required>
-              <div class="invalid-feedback">Introduce un email válido.</div>
-            </div>
-            <div class="mb-3">
-              <label for="loginPassword" class="form-label visually-hidden">Contraseña</label>
-              <input type="password" id="loginPassword" class="form-control" placeholder="Contraseña (obligatoria)"
-                required minlength="6">
-              <div class="invalid-feedback">Contraseña requerida (mínimo 6 caracteres).</div>
-            </div>
-            <button class="btn btn-nasa w-100" id="loginSubmit" type="submit">Iniciar Sesión</button>
-            <!-- Enlace para cambiar al formulario de registro -->
-            <p class="text-center mt-2">¿No tienes cuenta? <a href="#" id="toRegisterLink"
-                style="color: var(--nasa-red);">Regístrate</a></p>
-          </form>
-
-          <!-- Formulario para que el usuario cree una cuenta nueva -->
-          <form id="registerForm" style="display:none;" class="needs-validation" novalidate>
-            <div class="mb-3">
-              <label for="registerName" class="form-label visually-hidden">Nombre completo</label>
-              <input type="text" id="registerName" class="form-control" placeholder="Nombre completo (obligatorio)"
-                required>
-              <div class="invalid-feedback">Introduce tu nombre completo.</div>
-            </div>
-            <div class="mb-3">
-              <label for="registerEmail" class="form-label visually-hidden">Email</label>
-              <input type="email" id="registerEmail" class="form-control" placeholder="Email (obligatorio)" required>
-              <div class="invalid-feedback">Introduce un email válido.</div>
-            </div>
-            <div class="mb-3">
-              <label for="registerPassword" class="form-label visually-hidden">Contraseña</label>
-              <input type="password" id="registerPassword" class="form-control"
-                placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
-              <div class="invalid-feedback">La contraseña debe tener al menos 6 caracteres.</div>
-            </div>
-            <div class="mb-3">
-              <label for="registerConfirm" class="form-label visually-hidden">Confirmar contraseña</label>
-              <input type="password" id="registerConfirm" class="form-control" placeholder="Confirmar contraseña"
-                required minlength="6">
-              <div class="invalid-feedback">Las contraseñas deben coincidir.</div>
-            </div>
-            <button class="btn btn-nasa w-100" id="registerSubmit" type="submit">Registrarse</button>
-            <!-- Enlace para volver al formulario de login -->
-            <p class="text-center mt-2">¿Ya tienes cuenta? <a href="#" id="toLoginLink"
-                style="color: var(--nasa-blue);">Inicia sesión</a></p>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================= -->
   <!-- SCRIPTS Y LÓGICA DE LA APP    -->
   <!-- ============================= -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Script que dibuja el fondo animado de estrellas -->
   <script src="js/background.js"></script>
-  <!-- Script que gestiona el login y registro de usuarios -->
-  <script src="js/auth.js"></script>
   <!-- Script principal que controla la navegación y la lógica de la app -->
   <script src="js/main.js"></script>
   <script src="js/particles.js"></script> <!-- Script para animaciones de partículas -->

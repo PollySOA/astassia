@@ -5,49 +5,35 @@
  * - Integración con APIs de la NASA (asteroides, imágenes EPIC, etc.)
  * - Renderizado de visualizaciones interactivas (NASA Eyes)
  * - Gestión de navegación entre secciones
- * - Autenticación de usuarios y comentarios
+ * - Comentarios y valoración anónimos
  */
+
+// =================== CONFIGURACIÓN GLOBAL (FUERA DE READY) ===================
+// Yo: intento obtener la clave desde la configuración global `APP_CONFIG` si existe.
+const API_KEY = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.NASA_API_KEY)
+  ? APP_CONFIG.NASA_API_KEY
+  : (typeof NASA_API_KEY !== "undefined" ? NASA_API_KEY : "DEMO_KEY");
+
+// Yo: la API NEOWS necesita al menos start_date; construyo un rango de 7 días
+const today = new Date();
+const endDate = today.toISOString().slice(0,10);
+const startDateObj = new Date(today);
+startDateObj.setDate(startDateObj.getDate() - 7);
+const startDate = startDateObj.toISOString().slice(0,10);
+
+const API_BASE = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.NASA_NEOWS_URL)
+  ? APP_CONFIG.NASA_NEOWS_URL
+  : 'https://api.nasa.gov/neo/rest/v1/feed';
+
+const API_URL = `${API_BASE}?start_date=${startDate}&end_date=${endDate}&api_key=${API_KEY}`;
+
+console.log('📋 Configuración cargada:', { API_KEY: API_KEY.substring(0, 10) + '...', API_URL });
 
 $(document).ready(function(){
   
-  // =================== CONFIGURACIÓN GLOBAL ===================
-  // api.js
-  // Control del módulo de asteroides: obtiene y muestra información desde la NASA NEO API
-
-  // Yo: intento obtener la clave desde la configuración global `APP_CONFIG` si existe.
-  const API_KEY = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.NASA_API_KEY)
-    ? APP_CONFIG.NASA_API_KEY
-    : (typeof NASA_API_KEY !== "undefined" ? NASA_API_KEY : "DEMO_KEY");
-
-  // Yo: la API NEOWS necesita al menos start_date; construyo un rango de 7 días
-  // (start_date .. end_date) para obtener resultados útiles.
-  const today = new Date();
-  const endDate = today.toISOString().slice(0,10);
-  const startDateObj = new Date(today);
-  startDateObj.setDate(startDateObj.getDate() - 7);
-  const startDate = startDateObj.toISOString().slice(0,10);
-
-  const API_BASE = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.NASA_NEOWS_URL)
-    ? APP_CONFIG.NASA_NEOWS_URL
-    : 'https://api.nasa.gov/neo/rest/v1/feed';
-
-  const API_URL = `${API_BASE}?start_date=${startDate}&end_date=${endDate}&api_key=${API_KEY}`;
-
-  // Nota: He eliminado la versión simple y duplicada de `loadAsteroids` y `renderAsteroids`
-  // que usaba `fetch` y retornaba una lista. Aquí dejo una nota en primera persona para
-  // un principiante:
-  // Yo: originalmente tenía una versión pequeña arriba que usaba fetch. Más abajo en
-  // este archivo hay una implementación completa y más robusta que usa jQuery AJAX,
-  // procesa los datos y actualiza muchas partes de la interfaz. Para evitar confusiones
-  // y errores por duplicidad, mantengo sólo la implementación completa que está más abajo.
-
-  // Ejecutar automáticamente al cargar la página
-  document.addEventListener("DOMContentLoaded", loadAsteroids);
-
   // =================== VARIABLES DE ESTADO ===================
   let allAsteroids = [];
   let currentFilter = 'all';
-  let currentUser = null;
   let epicImages = [];
   let currentEpicIndex = 0;
   let nasaEyesLoaded = {
@@ -62,15 +48,10 @@ $(document).ready(function(){
     
     initEarthSystem();
     setupNavigation();
-    setupAuth();
     loadAsteroids();
     setupEyesSections();
-    
-    currentUser = loadSession();
-    updateAuthUI();
-    
-    renderComments();
-    renderCommentForm();
+    initExplorar();
+    initComments();
   }
 
   // ========== NASA EYES INTEGRATION ==========
@@ -143,7 +124,7 @@ $(document).ready(function(){
       try {
         const eyesHTML = `
           <div class="nasa-eyes-embed">
-            <div class="embed-container" style="position: relative; height: 400px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(252, 61, 33, 0.3);">
+            <div class="embed-container" style="position: relative; height: 800px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(252, 61, 33, 0.3);">
               <iframe 
                 src="${urls[type]}" 
                 style="width: 100%; height: 100%; border: none;"
@@ -446,8 +427,96 @@ $(document).ready(function(){
       $('.filter-btn').removeClass('active');
       $(this).addClass('active');
       currentFilter = $(this).data('filter');
-      renderAsteroids();
+      applyFilter();  // Nueva función para aplicar filtro
     });
+  }
+
+  // Función para reaplicar filtros sin recargar datos
+  function applyFilter() {
+    console.log(`🔍 Aplicando filtro: ${currentFilter}`);
+    
+    let filtered = allAsteroids;
+    if (currentFilter === 'dangerous') {
+      filtered = filtered.filter(a => a.dangerous);
+    } else if (currentFilter === 'safe') {
+      filtered = filtered.filter(a => !a.dangerous);
+    }
+    
+    // Ordenar por distancia
+    filtered.sort((a, b) => a.distance - b.distance);
+
+    // Renderizar lista (primeros 50)
+    const visibleCount = 50;
+    const asteroidHTML = filtered.slice(0, visibleCount).map(function(ast) {
+      const velocity = Math.round(ast.velocity);
+      const distance = Math.round(ast.distance);
+      const moons = (ast.distance / CONFIG.MOON_DISTANCE).toFixed(2);
+      const dangerClass = ast.dangerous && ast.distance < CONFIG.DANGER_THRESHOLD ? 'danger-high' : 
+                          ast.dangerous ? 'danger-medium' : 'danger-low';
+      const badge = ast.dangerous ? 
+        '<span class="badge bg-danger">PELIGROSO</span>' :
+        '<span class="badge bg-success">SEGURO</span>';
+      
+      return `
+        <div class="asteroid-item ${dangerClass}">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="mb-1">${ast.name} ${badge}</h6>
+              <small>
+                <i class="bi bi-calendar"></i> ${ast.date} | 
+                <i class="bi bi-rulers"></i> ${distance.toLocaleString('es-ES')} km (${moons} lunas) | 
+                <i class="bi bi-speedometer2"></i> ${velocity.toLocaleString('es-ES')} km/h
+              </small>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    $('#asteroidsList').html(asteroidHTML || '<p class="text-center text-muted">No hay asteroides con este filtro</p>');
+    
+    // Mostrar botón "Ver lista completa" si hay más asteroides
+    if (filtered.length > visibleCount) {
+      $('#toggleAsteroidsFullView').show();
+      $('#toggleAsteroidsFullView').off('click').on('click', function() {
+        const full = $(this).data('full');
+        if (full) {
+          applyFilter();
+          $(this).data('full', false).html('<i class="bi bi-fullscreen"></i> Ver lista completa');
+        } else {
+          // Mostrar todos
+          const allHTML = filtered.map(function(ast) {
+            const velocity = Math.round(ast.velocity);
+            const distance = Math.round(ast.distance);
+            const moons = (ast.distance / CONFIG.MOON_DISTANCE).toFixed(2);
+            const dangerClass = ast.dangerous && ast.distance < CONFIG.DANGER_THRESHOLD ? 'danger-high' : 
+                                ast.dangerous ? 'danger-medium' : 'danger-low';
+            const badge = ast.dangerous ? 
+              '<span class="badge bg-danger">PELIGROSO</span>' :
+              '<span class="badge bg-success">SEGURO</span>';
+            
+            return `
+              <div class="asteroid-item ${dangerClass}">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h6 class="mb-1">${ast.name} ${badge}</h6>
+                    <small>
+                      <i class="bi bi-calendar"></i> ${ast.date} | 
+                      <i class="bi bi-rulers"></i> ${distance.toLocaleString('es-ES')} km (${moons} lunas) | 
+                      <i class="bi bi-speedometer2"></i> ${velocity.toLocaleString('es-ES')} km/h
+                    </small>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          $('#asteroidsList').html(allHTML);
+          $(this).data('full', true).html('<i class="bi bi-fullscreen-exit"></i> Ocultar lista completa');
+        }
+      });
+    } else {
+      $('#toggleAsteroidsFullView').hide();
+    }
   }
 
   function navigateToSection(sectionId) {
@@ -466,30 +535,28 @@ $(document).ready(function(){
   function loadAsteroids() {
     console.log('🔄 Iniciando carga de asteroides...');
     
-    const today = new Date();
-    const startDate = today.toISOString().split('T')[0];
-    
     $('#asteroidsLoading').show();
     $('#asteroidsList').hide();
 
-    const url = `${CONFIG.NASA_NEOWS_URL}?start_date=${startDate}&api_key=${CONFIG.NASA_API_KEY}`;
-    console.log('📡 URL de la API:', url);
+    // Usar la URL ya construida con rango de 7 días
+    console.log('📡 URL de la API:', API_URL);
 
     $.ajax({
-      url: url,
+      url: API_URL,
       method: 'GET',
-      timeout: 10000,
+      timeout: 10000,  // 10 segundos máximo
       success: function(data) {
         console.log('✅ NASA NeoWs API exitosa', data);
-        if (data && data.near_earth_objects) {
+        if (data && data.near_earth_objects && Object.keys(data.near_earth_objects).length > 0) {
           renderAsteroids(data);
         } else {
-          console.warn('⚠️ Datos de API vacíos');
+          console.warn('⚠️ Datos de API vacíos o inválidos');
           loadAsteroidsBackup();
         }
       },
       error: function(xhr, status, error) {
         console.error('❌ Error NASA API:', status, error);
+        console.log(`⏱️ Timeout/Error después de 10s. Usando respaldo...`);
         loadAsteroidsBackup();
       }
     });
@@ -522,17 +589,6 @@ $(document).ready(function(){
 
     console.log('✅ Asteroides procesados:', allAsteroids.length);
 
-    // Filtrar según selección
-    let filtered = allAsteroids;
-    if (currentFilter === 'dangerous') {
-      filtered = filtered.filter(a => a.dangerous);
-    } else if (currentFilter === 'safe') {
-      filtered = filtered.filter(a => !a.dangerous);
-    }
-
-    // Ordenar por distancia
-    filtered.sort((a, b) => a.distance - b.distance);
-
     // Actualizar estadísticas
     const dangerous = allAsteroids.filter(a => a.dangerous);
     const velocities = allAsteroids.map(a => a.velocity);
@@ -543,8 +599,8 @@ $(document).ready(function(){
     $('#maxSpeed').text(Math.round(maxVelocity).toLocaleString('es-ES'));
     
     if (allAsteroids.length > 0) {
-      const closest = filtered[0];
-      const closestMoons = (closest.distance / CONFIG.MOON_DISTANCE).toFixed(2);
+      const sortedByDist = [...allAsteroids].sort((a, b) => a.distance - b.distance);
+      const closestMoons = (sortedByDist[0].distance / CONFIG.MOON_DISTANCE).toFixed(2);
       $('#closestMoons').text(closestMoons);
     }
 
@@ -552,42 +608,45 @@ $(document).ready(function(){
     $('#countDangerous').text(dangerous.length);
     $('#countSafe').text(allAsteroids.length - dangerous.length);
 
-    // Renderizar lista (primeros 30)
-    const asteroidHTML = filtered.slice(0, 30).map(function(ast) {
-      const velocity = Math.round(ast.velocity);
-      const distance = Math.round(ast.distance);
-      const moons = (ast.distance / CONFIG.MOON_DISTANCE).toFixed(2);
-      const dangerClass = ast.dangerous && ast.distance < CONFIG.DANGER_THRESHOLD ? 'danger-high' : 
-                          ast.dangerous ? 'danger-medium' : 'danger-low';
-      const badge = ast.dangerous ? 
-        '<span class="badge bg-danger">PELIGROSO</span>' :
-        '<span class="badge bg-success">SEGURO</span>';
-      
-      return `
-        <div class="asteroid-item ${dangerClass}">
-          <div class="d-flex justify-content-between">
-            <div>
-              <h6 class="mb-1">${ast.name} ${badge}</h6>
-              <small>
-                <i class="bi bi-calendar"></i> ${ast.date} | 
-                <i class="bi bi-rulers"></i> ${distance.toLocaleString('es-ES')} km (${moons} lunas) | 
-                <i class="bi bi-speedometer2"></i> ${velocity.toLocaleString('es-ES')} km/h
-              </small>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    $('#asteroidsList').html(asteroidHTML);
+    // Aplicar filtro inicial
+    applyFilter();
   }
 
   function loadAsteroidsBackup() {
-    console.log('🔄 Cargando datos de respaldo...');
+    console.log('� Cargando datos de respaldo desde backup.json...');
+    
+    $.ajax({
+      url: 'backup.json',
+      method: 'GET',
+      timeout: 5000,
+      dataType: 'json',
+      success: function(data) {
+        console.log('✅ Datos de respaldo cargados desde backup.json', data);
+        if (data && data.near_earth_objects) {
+          renderAsteroids(data);
+          $('#asteroidsList').prepend(
+            '<div class="alert alert-warning mb-3">' +
+            '<i class="bi bi-exclamation-triangle"></i> <strong>⚠️ Modo Offline:</strong> Datos de respaldo - API de NASA no disponible' +
+            '</div>'
+          );
+        } else {
+          console.error('❌ backup.json no tiene estructura correcta');
+          loadAsteroidsEmergency();
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('❌ Error cargando backup.json:', status, error);
+        loadAsteroidsEmergency();
+      }
+    });
+  }
+
+  function loadAsteroidsEmergency() {
+    console.log('🆘 Cargando datos de emergencia (inline)...');
     
     allAsteroids = [
       {
-        name: '2024 XY1 (Backup)',
+        name: '2024 XY1 (Emergencia)',
         diameter: 250,
         distance: 2500000,
         velocity: 45000,
@@ -595,7 +654,7 @@ $(document).ready(function(){
         date: '2024-10-22'
       },
       {
-        name: '2024 AB2 (Backup)',
+        name: '2024 AB2 (Emergencia)',
         diameter: 150,
         distance: 5500000,
         velocity: 32000,
@@ -603,7 +662,7 @@ $(document).ready(function(){
         date: '2024-10-23'
       },
       {
-        name: '2024 CD3 (Backup)',
+        name: '2024 CD3 (Emergencia)',
         diameter: 180,
         distance: 3800000,
         velocity: 28000,
@@ -611,7 +670,7 @@ $(document).ready(function(){
         date: '2024-10-24'
       },
       {
-        name: '2024 EF4 (Backup)',
+        name: '2024 EF4 (Emergencia)',
         diameter: 90,
         distance: 7200000,
         velocity: 35000,
@@ -620,162 +679,36 @@ $(document).ready(function(){
       }
     ];
 
-    const backupData = {
+    const emergencyData = {
       near_earth_objects: {
         '2024-10-22': allAsteroids
       }
     };
 
-    console.log('✅ Datos de respaldo cargados');
-    renderAsteroids(backupData);
+    console.log('✅ Datos de emergencia cargados');
+    renderAsteroids(emergencyData);
     
     $('#asteroidsList').prepend(
-      '<div class="alert alert-warning mb-3">' +
-      '<i class="bi bi-exclamation-triangle"></i> Datos de respaldo - API no disponible' +
+      '<div class="alert alert-danger mb-3">' +
+      '<i class="bi bi-exclamation-circle-fill"></i> <strong>🆘 Modo Emergencia:</strong> API indisponible y backup.json no accesible' +
       '</div>'
     );
   }
 
-  // ========== AUTENTICACIÓN ==========
-  function setupAuth() {
-    $('#authLink').on('click', function(e) {
-      e.preventDefault();
-      if (currentUser) {
-        if (confirm('¿Cerrar sesión?')) {
-          logout();
-        }
-      } else {
-        new bootstrap.Modal($('#authModal')).show();
-      }
-    });
-
-    $('#showRegister').on('click', function(e) {
-      e.preventDefault();
-      $('#loginForm').addClass('d-none');
-      $('#registerForm').removeClass('d-none');
-      $('#authModalTitle').text('Registrarse');
-    });
-
-    $('#showLogin').on('click', function(e) {
-      e.preventDefault();
-      $('#registerForm').addClass('d-none');
-      $('#loginForm').removeClass('d-none');
-      $('#authModalTitle').text('Iniciar Sesión');
-    });
-
-    $('#loginForm').on('submit', function(e) {
-      e.preventDefault();
-      if (!this.checkValidity()) {
-        e.stopPropagation();
-        $(this).addClass('was-validated');
-        return;
-      }
-      login();
-    });
-
-    $('#registerForm').on('submit', function(e) {
-      e.preventDefault();
-      if (!this.checkValidity()) {
-        e.stopPropagation();
-        $(this).addClass('was-validated');
-        return;
-      }
-      
-      const password = $('#registerPassword').val();
-      const confirm = $('#registerPasswordConfirm').val();
-      
-      if (password !== confirm) {
-        alert('Las contraseñas no coinciden');
-        return;
-      }
-      
-      register();
-    });
-  }
-
-  function login() {
-    const email = $('#loginEmail').val();
-    const password = $('#loginPassword').val();
-
-    const users = JSON.parse(localStorage.getItem('nasa_users_jquery') || '[]');
-    const user = users.find(u => u.email === email && u.password === btoa(password));
-
-    if (user) {
-      currentUser = { name: user.name, email: user.email };
-      localStorage.setItem('nasa_session_jquery', JSON.stringify(currentUser));
-      updateAuthUI();
-      bootstrap.Modal.getInstance($('#authModal')[0]).hide();
-      alert('¡Bienvenido, ' + user.name + '!');
-      renderCommentForm();
-    } else {
-      alert('Credenciales incorrectas');
-    }
-  }
-
-  function register() {
-    const name = $('#registerName').val();
-    const email = $('#registerEmail').val();
-    const password = $('#registerPassword').val();
-
-    const users = JSON.parse(localStorage.getItem('nasa_users_jquery') || '[]');
-    
-    if (users.some(u => u.email === email)) {
-      alert('El email ya está registrado');
-      return;
-    }
-
-    users.push({
-      id: Date.now(),
-      name: name,
-      email: email,
-      password: btoa(password)
-    });
-
-    localStorage.setItem('nasa_users_jquery', JSON.stringify(users));
-    
-    currentUser = { name: name, email: email };
-    localStorage.setItem('nasa_session_jquery', JSON.stringify(currentUser));
-    updateAuthUI();
-    bootstrap.Modal.getInstance($('#authModal')[0]).hide();
-    alert('¡Registro exitoso! Bienvenido, ' + name + '!');
-    renderCommentForm();
-  }
-
-  function logout() {
-    currentUser = null;
-    localStorage.removeItem('nasa_session_jquery');
-    updateAuthUI();
-    renderCommentForm();
-    alert('Sesión cerrada correctamente');
-  }
-
-  function loadSession() {
-    const session = localStorage.getItem('nasa_session_jquery');
-    return session ? JSON.parse(session) : null;
-  }
-
-  function updateAuthUI() {
-    if (currentUser) {
-      $('#authLink').html(`<i class="bi bi-person-check-fill"></i> ${currentUser.name}`);
-    } else {
-      $('#authLink').html('<i class="bi bi-person-circle"></i> Login');
-    }
-  }
-
-  // ========== COMENTARIOS ==========
+  // ========== COMENTARIOS Y VALORACIÓN (ANÓNIMOS) ==========
   function renderComments() {
     const comments = JSON.parse(localStorage.getItem('jsoares_eyes_comments') || '[]');
     let html = '';
     
     if (comments.length === 0) {
-      html = '<p class="text-muted">No hay comentarios aún. ¡Sé el primero en comentar!</p>';
+      html = '<p class="text-muted"><i class="bi bi-chat-left"></i> No hay comentarios aún. ¡Sé el primero!</p>';
     } else {
       comments.forEach(c => {
-        html += `<div class="comment-item">
-          <strong style="color:var(--nasa-red);">${c.user}</strong> 
-          <span class="star-rating">${'★'.repeat(c.rating)}${'☆'.repeat(5 - c.rating)}</span>
-          <p style="margin:0.5rem 0;">${c.text}</p>
-          <small class="text-secondary">${c.date}</small>
+        html += `<div class="comment-item" style="border-left: 3px solid var(--nasa-red); padding: 1rem; margin: 0.5rem 0; background: rgba(252, 61, 33, 0.05); border-radius: 4px;">
+          <strong style="color: var(--nasa-red);">👤 ${c.name}</strong> 
+          <span class="star-rating" style="margin-left: 0.5rem;">${'★'.repeat(c.rating)}${'☆'.repeat(5 - c.rating)}</span>
+          <p style="margin: 0.5rem 0; color: #ccc;">${c.text}</p>
+          <small class="text-secondary" style="font-size: 0.85rem;">📅 ${c.date}</small>
         </div>`;
       });
     }
@@ -783,31 +716,28 @@ $(document).ready(function(){
   }
 
   function renderCommentForm() {
-    if (!currentUser) {
-      $('#commentFormContainer').html(
-        '<div class="alert alert-warning mt-3">' +
-        '<i class="bi bi-info-circle"></i> Debes iniciar sesión para dejar un comentario.' +
-        '</div>'
-      );
-      return;
-    }
-    
     let starsHtml = '';
     for (let i = 1; i <= 5; i++) {
-      starsHtml += `<i class="bi bi-star-fill" data-value="${i}" style="cursor:pointer;font-size:1.3rem;color:gold;"></i>`;
+      starsHtml += `<i class="bi bi-star-fill" data-value="${i}" style="cursor:pointer;font-size:1.3rem;color:gold;margin-right:0.3rem;"></i>`;
     }
     
-    const formHtml = `<form id="commentForm" class="mt-3">
-      <div class="mb-2">
-        <label class="form-label">Tu comentario</label>
-        <textarea class="form-control" id="commentText" rows="3" maxlength="300" required placeholder="Escribe tu opinión sobre NASA Eyes..."></textarea>
+    const formHtml = `<form id="commentForm" class="mt-3" style="background: rgba(252, 61, 33, 0.08); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(252, 61, 33, 0.2);">
+      <div class="mb-3">
+        <label class="form-label" style="color: var(--nasa-red); font-weight: bold;">Tu nombre</label>
+        <input type="text" class="form-control" id="commentName" placeholder="Tu nombre" maxlength="50" required style="background: rgba(255,255,255,0.05); border-color: rgba(252, 61, 33, 0.3); color: #fff;">
       </div>
       <div class="mb-3">
-        <label class="form-label">Valoración:</label> 
+        <label class="form-label" style="color: var(--nasa-red); font-weight: bold;">Tu comentario</label>
+        <textarea class="form-control" id="commentText" rows="3" maxlength="300" required placeholder="Escribe tu opinión sobre NASA Eyes..." style="background: rgba(255,255,255,0.05); border-color: rgba(252, 61, 33, 0.3); color: #fff;"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" style="color: var(--nasa-red); font-weight: bold;">Valoración:</label> 
         <span id="ratingStars">${starsHtml}</span>
         <input type="hidden" id="commentRating" value="5">
       </div>
-      <button type="submit" class="btn btn-danger-neon">Enviar Comentario</button>
+      <button type="submit" class="btn btn-danger-neon">
+        <i class="bi bi-send"></i> Enviar Comentario
+      </button>
     </form>`;
     
     $('#commentFormContainer').html(formHtml);
@@ -824,8 +754,14 @@ $(document).ready(function(){
     // Manejar envío del formulario
     $('#commentForm').on('submit', function(e) {
       e.preventDefault();
+      const name = $('#commentName').val().trim();
       const text = $('#commentText').val().trim();
       const rating = parseInt($('#commentRating').val());
+      
+      if (!name) {
+        alert('Por favor ingresa tu nombre');
+        return;
+      }
       
       if (!text) {
         alert('Por favor escribe un comentario');
@@ -834,22 +770,271 @@ $(document).ready(function(){
       
       const comments = JSON.parse(localStorage.getItem('jsoares_eyes_comments') || '[]');
       comments.unshift({
-        user: currentUser.name,
+        name: name,
         text: text,
         rating: rating,
         date: new Date().toLocaleString('es-ES')
       });
       
+      // Guardar máximo 50 comentarios
+      if (comments.length > 50) {
+        comments.pop();
+      }
+      
       localStorage.setItem('jsoares_eyes_comments', JSON.stringify(comments));
       renderComments();
-      
-      // Resetear formulario
-      this.reset();
-      $('#commentRating').val(5);
-      $('#ratingStars i').attr('class', 'bi bi-star-fill');
+      renderCommentForm();
       
       alert('¡Comentario publicado con éxito!');
     });
+  }
+
+  // ========== SECCIÓN EXPLORAR: HUBBLE ==========
+  // Funciones para cargar Escuchando Hubble y Camera Hubble con fallback
+
+  function loadHubbleListening() {
+    console.log('🎵 Cargando Escuchando Hubble...');
+    
+    const $loading = $('#hubbleListeningLoading');
+    const $content = $('#hubbleListeningContent');
+    const $iframe = $('#hubbleListeningIframe');
+    
+    $loading.show();
+    $content.hide();
+    
+    // Esperar a que cargue el iframe (timeout de 5 segundos)
+    const loadTimeout = setTimeout(() => {
+      console.warn('⚠️ Hubble Listening tardó mucho, intentando respaldo...');
+      loadHubbleListeningFallback();
+    }, 5000);
+    
+    $iframe.on('load', function() {
+      clearTimeout(loadTimeout);
+      $loading.hide();
+      $content.show();
+      console.log('✅ Escuchando Hubble cargado');
+    }).on('error', function() {
+      clearTimeout(loadTimeout);
+      console.warn('❌ Hubble Listening no cargó, usando respaldo...');
+      loadHubbleListeningFallback();
+    });
+  }
+
+  function loadHubbleListeningFallback() {
+    console.log('📊 Cargando respaldo OSDR para Hubble Listening...');
+    
+    const $loading = $('#hubbleListeningLoading');
+    const $content = $('#hubbleListeningContent');
+    
+    // Llamar a OSDR API (estudios relacionados con Hubble/espaciales)
+    const osdrUrl = 'https://osdr.nasa.gov/osdr/data/osd/files/87-95,137,153/?page=0&size=10';
+    
+    $.ajax({
+      url: osdrUrl,
+      method: 'GET',
+      timeout: 5000,
+      dataType: 'json',
+      success: function(data) {
+        console.log('✅ Datos OSDR obtenidos:', data);
+        
+        let html = '<div class="alert alert-info mb-3">';
+        html += '<i class="bi bi-info-circle"></i> Datos de respaldo - OSDR NASA<br>';
+        html += '<small>Escuchando Hubble no disponible, mostrando datos de investigación espacial</small></div>';
+        
+        if (data.studies && data.studies.length > 0) {
+          html += '<div class="row g-3">';
+          data.studies.slice(0, 5).forEach((study, idx) => {
+            html += `<div class="col-md-6">
+              <div class="card bg-dark border-danger">
+                <div class="card-body">
+                  <h6 class="card-title">Estudio ${idx + 1}</h6>
+                  <p class="card-text text-muted small">${study.title || 'Datos del Hubble'}</p>
+                  <a href="https://osdr.nasa.gov" target="_blank" class="btn btn-sm btn-danger-neon">
+                    <i class="bi bi-box-arrow-up-right"></i> Ver más
+                  </a>
+                </div>
+              </div>
+            </div>`;
+          });
+          html += '</div>';
+        } else {
+          html += '<p class="text-muted">Datos de investigación espacial de la NASA</p>';
+        }
+        
+        $content.html(html);
+        $loading.hide();
+        $content.show();
+      },
+      error: function(err) {
+        console.warn('❌ OSDR también falló:', err);
+        $content.html(`
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> 
+            Escuchando Hubble no está disponible en este momento.
+            <a href="https://www3.nasa.gov/specials/hubble-adventure-app/" target="_blank" class="btn btn-sm btn-danger-neon ms-2">
+              Visitar sitio NASA
+            </a>
+          </div>
+        `);
+        $loading.hide();
+        $content.show();
+      }
+    });
+  }
+
+  window.playHubbleGame = function() {
+    console.log('🎮 Cargando Camera Hubble...');
+    
+    const $loading = $('#hubbleGameLoading');
+    const $content = $('#hubbleGameContent');
+    const $btn = $('#playHubbleGameBtn');
+    const $iframe = $('#hubbleGameIframe');
+    
+    $btn.hide();
+    $loading.show();
+    $content.hide();
+    
+    // Esperar a que cargue el iframe (timeout de 5 segundos)
+    const loadTimeout = setTimeout(() => {
+      console.warn('⚠️ Camera Hubble tardó mucho, intentando respaldo...');
+      loadHubbleGameFallback();
+    }, 5000);
+    
+    $iframe.on('load', function() {
+      clearTimeout(loadTimeout);
+      $loading.hide();
+      $content.show();
+      console.log('✅ Camera Hubble cargado');
+    }).on('error', function() {
+      clearTimeout(loadTimeout);
+      console.warn('❌ Camera Hubble no cargó, usando respaldo...');
+      loadHubbleGameFallback();
+    });
+  };
+
+  function loadHubbleGameFallback() {
+    console.log('📊 Cargando respaldo OSDR para Camera Hubble...');
+    
+    const $loading = $('#hubbleGameLoading');
+    const $content = $('#hubbleGameContent');
+    const $btn = $('#playHubbleGameBtn');
+    
+    // Llamar a OSDR API
+    const osdrUrl = 'https://osdr.nasa.gov/osdr/data/osd/files/100-110,200-210/?page=0&size=10';
+    
+    $.ajax({
+      url: osdrUrl,
+      method: 'GET',
+      timeout: 5000,
+      dataType: 'json',
+      success: function(data) {
+        console.log('✅ Datos OSDR para juego obtenidos:', data);
+        
+        let html = '<div class="alert alert-info mb-3">';
+        html += '<i class="bi bi-info-circle"></i> Camera Hubble - Modo Respaldo<br>';
+        html += '<small>Visualizando datos de observaciones espaciales</small></div>';
+        
+        html += '<div class="row g-3">';
+        if (data.studies && data.studies.length > 0) {
+          data.studies.slice(0, 6).forEach((study, idx) => {
+            html += `<div class="col-md-4">
+              <div class="card bg-dark border-danger text-center p-3">
+                <i class="bi bi-telescope text-danger" style="font-size: 2rem;"></i>
+                <h6 class="mt-2">Observación ${idx + 1}</h6>
+                <p class="small text-muted mb-0">${study.type || 'Datos Hubble'}</p>
+              </div>
+            </div>`;
+          });
+        } else {
+          html += '<div class="col-12"><p class="text-muted">Datos de observaciones telescópicas</p></div>';
+        }
+        html += '</div>';
+        
+        $content.html(html);
+        $btn.show();
+        $loading.hide();
+        $content.show();
+      },
+      error: function(err) {
+        console.warn('❌ OSDR también falló:', err);
+        $content.html(`
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> 
+            Camera Hubble no está disponible en este momento.
+            <a href="https://www3.nasa.gov/specials/hubble-adventure-app/" target="_blank" class="btn btn-sm btn-danger-neon ms-2">
+              Visitar juego en NASA
+            </a>
+          </div>
+        `);
+        $btn.show();
+        $loading.hide();
+        $content.show();
+      }
+    });
+  };
+
+  // Función para mostrar la sección Explorar cuando se hace clic
+  function initExplorar() {
+    console.log('🔭 Sección Explorar inicializada');
+    
+    // Evento para cuando se hace clic en el navbar
+    $(document).on('click', '.nav-link[data-section="explorar"]', function() {
+      setTimeout(() => {
+        loadHubbleListening();
+      }, 500);
+    });
+    
+    // También cargar cuando se hace clic en el botón del carrusel
+    $(document).on('click', '.btn-danger-neon[data-section="explorar"]', function() {
+      setTimeout(() => {
+        loadHubbleListening();
+      }, 500);
+    });
+    
+    // Evento para el botón "¡Juega Ahora!" con jQuery
+    $(document).on('click', '.play-hubble-game-btn', function() {
+      playHubbleGame();
+    });
+  }
+
+  // Función global para jQuery
+  window.playHubbleGame = function() {
+    console.log('🎮 Cargando Camera Hubble...');
+    
+    const $loading = $('#hubbleGameLoading');
+    const $content = $('#hubbleGameContent');
+    const $btn = $('#playHubbleGameBtn');
+    const $iframe = $('#hubbleGameIframe');
+    
+    $btn.hide();
+    $loading.show();
+    $content.hide();
+    
+    // Esperar a que cargue el iframe (timeout de 5 segundos)
+    const loadTimeout = setTimeout(() => {
+      console.warn('⚠️ Camera Hubble tardó mucho, intentando respaldo...');
+      loadHubbleGameFallback();
+    }, 5000);
+    
+    $iframe.on('load', function() {
+      clearTimeout(loadTimeout);
+      $loading.hide();
+      $content.show();
+      console.log('✅ Camera Hubble cargado');
+    }).on('error', function() {
+      clearTimeout(loadTimeout);
+      console.warn('❌ Camera Hubble no cargó, usando respaldo...');
+      loadHubbleGameFallback();
+    });
+  };
+
+  // Agregar a la función init() - desplázate hasta el final y agrega esto
+  // initExplorar(); // Se debe agregar en la función init()
+
+  // Inicializar comentarios al cargar
+  function initComments() {
+    renderComments();
+    renderCommentForm();
   }
 
   // ========== INICIAR LA APLICACIÓN ==========
